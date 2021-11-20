@@ -17,18 +17,22 @@ class AuthController extends ApiController
 
   public function register(StoreRegister $request){
     $result = $this->repository->authRegister($request);
-
-    return $this->sendResponse($result);
+    return $this->apiResponse($result['info'], $result);
   }
 
   public function signIn(Request $request){
+   
+    $request->validate([
+      'email'=>'required|email|max:191',
+      'password'=>'required|string'
+    ]);
     $result = $this->repository->authSignIn($request);
-    return $this->sendResponse($result);
+    return $this->apiResponse($result['info'], $result);
   }
 
   public function recoverAccount(Request $request){
     $result = $this->repository->authRecover($request);
-    return $this->sendResponse($result);
+    return $this->apiResponse($result['info'], $result);
   }
 
 }

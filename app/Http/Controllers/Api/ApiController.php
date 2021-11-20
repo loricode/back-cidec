@@ -14,7 +14,31 @@ class ApiController extends Controller
      */
     public function sendResponse($result)
     {
-        return response()->json($result, $result['status']);
+
+       $response = [
+            'data' => $result['data'],
+            'success' => true,
+            'status' => 200,
+            'message' => $result['message']
+        ];
+
+        return response()->json($response, 200);
+    }
+
+    public function apiResponse($keyString, $result){
+        switch ($keyString) {
+            case 'success':
+                return $this->sendResponse($result);
+                break;
+
+            case 'error':
+                return $this->sendError($result);
+                break;
+
+            default:
+                return $this->sendError($result);
+                break;
+        }
     }
 
 
@@ -23,19 +47,15 @@ class ApiController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function sendError($error, $errorMessages = [], $code = 404)
+    public function sendError($error)
     {
     	$response = [
+            'data' => $error['data'],
             'success' => false,
-            'message' => $error,
+            'message' => $error['message'],
+            'status' => $error['status']
         ];
 
-
-        if(!empty($errorMessages)){
-            $response['data'] = $errorMessages;
-        }
-
-
-        return response()->json($response, $code);
+        return response()->json($response, $error['status']);
     }
 }

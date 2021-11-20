@@ -18,22 +18,40 @@ class AuthRepository implements AuthRepositoryInterface
 
   public function authRegister($data){
     try {
+
+       if($data['password'] != $data['repeatPassword']){
+         return [
+          'data' => [],
+          'info' => 'error',
+          'status' => 200,
+          'message' => trans('messages.no_equal')
+         ];
+       }
+
+       $existUser = $this->model->where('email', $data['email'])->first();
+
+       if(!empty($existUser)){
+        return [
+            'data' => [],
+            'info' => 'error',
+            'status' => 400,
+            'message' => trans('messages.registered')
+          ];
+       }
+
        $user = $this->model->create([
          'name' => $data['name'],
          'email' => $data['email'],
          'password' => Hash::make($data['password'])
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         return [
-           'response' => ['token' => $token],
-           'success' => true,
-           'status' => 200,
-           'message' => trans('messages.successfully')
-          ];
+          'data' => [],
+          'info' => 'success',
+          'message' => trans('messages.register')
+        ];
 
-     } catch (Throwable $th) {
+     } catch (Throwable $e) {
        report($e);
 
        return false;
@@ -43,26 +61,30 @@ class AuthRepository implements AuthRepositoryInterface
 
   public function authSignIn($data){
    try {
+ 
+    $user = $this->model->where('email', $data['email'])->first();
 
-    if(!Auth::attempt($data->only('email', 'password'))){
+    if(!$user || !Hash::check($data['password'], $user->password)){
       return [
-        'success' => false,
+        'data' => [],
+        'info' => 'error',
         'status' => 401, //Unauthorized
         'message' => trans('messages.try_again')
       ];
     }
 
-    $user = $this->model->where('email', $data['email'])->firstOrFail();
+    $user->getRoleNames();
 
-    $user->roles;
-
-    $token = $user->createToken('auth_token')->plainTextToken;
+    $token = $user->createToken( "mifasatoken" )->plainTextToken;
 
     return [
-        'response' => [ "data" => $user, 'token' => $token],
-        'success' => true,
-        'status' => 200,
-        'message' => trans('messages.successfully')
+        'data' => [
+            'roles' => $user['roles'],
+            'name'  => $user['name'],
+            'email' => $user['email'],
+            'token' => $token ],
+        'info' => 'success',
+        'message' => trans('messages.authenticated')
     ];
 
    }catch(Throwable $e){
@@ -80,23 +102,16 @@ class AuthRepository implements AuthRepositoryInterface
 
      if( empty($isUser) ){
         return [
-            'response'=> [ 'data' => [] ],
-            'success' => false,
-            'status' => 404,
+            'data' => [],
+            'info'=> 'error',
             'message' => trans('messages.email_not_exist')
         ];
       }
 
      $user = $this->model->where('email', $data['email'])->firstOrFail();
 
-
-
-     $token = $user->createToken('auth_token')->plainTextToken;
-
      return [
-      'response' => [ 'data' => $user, 'token' => $token ],
-      'success' => true,
-      'status' => 200,
+      'data' => [],
       'message' => trans('messages.successfully')
     ];
 
